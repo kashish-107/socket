@@ -11,6 +11,7 @@
 #define PORT    20319  
 #define TCP_PORT 25319 
 #define SERVER_A_PORT    21319  
+#define SERVER_C_PORT    23319  
 #define MAXLINE 1024 
 
 int main() { 
@@ -19,7 +20,7 @@ int main() {
 	char buffer[MAXLINE]; 
 	int opt = 1;
 	int len, n; 
-	struct sockaddr_in udpservaddr, cliaddr, udpservaddrA, tcpservaddr; 
+	struct sockaddr_in udpservaddr, cliaddr, udpservaddrA, udpservaddrC, tcpservaddr; 
 	int tcp_addrlen = sizeof(tcpservaddr);
 
 	// Creating socket file descriptor 
@@ -40,6 +41,7 @@ int main() {
 
 	memset(&udpservaddr, 0, sizeof(udpservaddr)); 
 	memset(&udpservaddrA, 0, sizeof(udpservaddrA)); 
+	memset(&udpservaddrC, 0, sizeof(udpservaddrC)); 
 	memset(&cliaddr, 0, sizeof(cliaddr)); 
 
 	// Filling current server information 
@@ -47,10 +49,15 @@ int main() {
 	udpservaddr.sin_addr.s_addr = INADDR_ANY; 
 	udpservaddr.sin_port = htons(PORT); 
 
-	// Filling backend server A  information 
+	// Filling backend server A information 
 	udpservaddrA.sin_family    = AF_INET; // IPv4 
 	udpservaddrA.sin_addr.s_addr = INADDR_ANY; 
 	udpservaddrA.sin_port = htons(SERVER_A_PORT); 
+
+	// Filling compute backend server C information 
+	udpservaddrC.sin_family    = AF_INET; // IPv4 
+	udpservaddrC.sin_addr.s_addr = INADDR_ANY; 
+	udpservaddrC.sin_port = htons(SERVER_C_PORT); 
 
 	// Filling tcp server  information 
 	tcpservaddr.sin_family    = AF_INET; // IPv4 
@@ -88,6 +95,13 @@ int main() {
 	n = recvfrom(udpsockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
 	buffer[n] = '\0'; 
 	printf("Message received from UPD backend server A: %s\n", buffer);
+
+	sendto(udpsockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *) &udpservaddrC, sizeof(udpservaddrC));
+        printf("AWS message sent to compute UDP backend server C: %s\n", buffer);
+
+	n = recvfrom(udpsockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
+	buffer[n] = '\0'; 
+	printf("Message received from compute UPD backend server C: %s\n", buffer);
 
 	send(new_socket , buffer, strlen(buffer), 0);
 	printf("Backend server message is sent back to client: %s\n", buffer);
