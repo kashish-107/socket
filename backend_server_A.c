@@ -12,7 +12,7 @@
 #define AWS_PORT    20319  
 #define MAXLINE 1024 
 
-char *hello = "Hello from server"; 
+char *hello = "Message from backend server A"; 
 
 int main() { 
 	int sockfd;  //Server socket file descriptor
@@ -54,10 +54,10 @@ int main() {
 	int len, n; 
 	n = recvfrom(sockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
 	buffer[n] = '\0'; 
-	printf("Client : %s\n", buffer); 
+	printf("Message received from AWS: %s\n", buffer); 
 
     	sendto(sockfd, (const char *)hello, strlen(hello), MSG_CONFIRM, (const struct sockaddr *) &aws_servaddr, sizeof(aws_servaddr));
-	printf("Hello message sent.\n");  
+	printf("Message sent to AWS: %s\n", hello); 
 	
 	close(sockfd);
 	return 0; 
