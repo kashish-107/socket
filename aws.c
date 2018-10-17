@@ -11,6 +11,7 @@
 #define PORT    20319  
 #define TCP_PORT 25319 
 #define SERVER_A_PORT    21319  
+#define SERVER_B_PORT    22319  
 #define SERVER_C_PORT    23319  
 #define MAXLINE 1024 
 
@@ -20,7 +21,7 @@ int main() {
 	char buffer[MAXLINE]; 
 	int opt = 1;
 	int len, n; 
-	struct sockaddr_in udpservaddr, cliaddr, udpservaddrA, udpservaddrC, tcpservaddr; 
+	struct sockaddr_in udpservaddr, cliaddr, udpservaddrA, udpservaddrB, udpservaddrC, tcpservaddr; 
 	int tcp_addrlen = sizeof(tcpservaddr);
 
 	// Creating socket file descriptor 
@@ -54,6 +55,11 @@ int main() {
 	udpservaddrA.sin_addr.s_addr = INADDR_ANY; 
 	udpservaddrA.sin_port = htons(SERVER_A_PORT); 
 
+	// Filling backend server A information 
+	udpservaddrB.sin_family    = AF_INET; // IPv4 
+	udpservaddrB.sin_addr.s_addr = INADDR_ANY; 
+	udpservaddrB.sin_port = htons(SERVER_B_PORT); 
+	
 	// Filling compute backend server C information 
 	udpservaddrC.sin_family    = AF_INET; // IPv4 
 	udpservaddrC.sin_addr.s_addr = INADDR_ANY; 
@@ -95,6 +101,13 @@ int main() {
 	n = recvfrom(udpsockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
 	buffer[n] = '\0'; 
 	printf("Message received from UPD backend server A: %s\n", buffer);
+
+	sendto(udpsockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *) &udpservaddrB, sizeof(udpservaddrA));
+        printf("Client message sent to UDP backend server B: %s\n", buffer);
+
+	n = recvfrom(udpsockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
+	buffer[n] = '\0'; 
+	printf("Message received from UPD backend server B: %s\n", buffer);
 
 	sendto(udpsockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *) &udpservaddrC, sizeof(udpservaddrC));
         printf("AWS message sent to compute UDP backend server C: %s\n", buffer);
