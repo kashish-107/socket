@@ -7,18 +7,16 @@
 #include <sys/socket.h> 
 #include <arpa/inet.h> 
 #include <netinet/in.h> 
-
-#define PORT    22319  
+#include "csvparser.h"
+#define PORT    21319  
 #define AWS_PORT    20319  
 #define MAXLINE 1024 
 
-char *hello = "Message from backend server B"; 
-
 int main() { 
 	int sockfd;  //Server socket file descriptor
-	char buffer[MAXLINE]; 
+	char buffer[MAXLINE], linkid[MAXLINE]; 
 	struct sockaddr_in servaddr, cliaddr, aws_servaddr; 
-
+	int n, len, ret;
 	// Creating socket file descriptor 
 	if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
 		perror("socket creation failed"); 
@@ -45,13 +43,19 @@ int main() {
 		exit(EXIT_FAILURE); 
 	} 
 
-	int len, n; 
+	printf("The Server A is up and running using UDP on port %d", PORT);
+
 	n = recvfrom(sockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
 	buffer[n] = '\0'; 
-	printf("Message received from AWS: %s\n", buffer); 
 
-    	sendto(sockfd, (const char *)hello, strlen(hello), MSG_CONFIRM, (const struct sockaddr *) &aws_servaddr, sizeof(aws_servaddr));
-	printf("Message sent to AWS: %s\n", hello); 
+	sscanf(buffer, "%s", linkid);	
+	printf("The Server A received input %s\n",linkid);
+
+	ret = csv_parser("database_a.csv", linkid, buffer);
+	printf("The server A has found %d match", ret);
+
+    	sendto(sockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *) &aws_servaddr, sizeof(aws_servaddr));
+	printf("The Server A finished sending the output to AWS"); 
 	
 	close(sockfd);
 	return 0; 

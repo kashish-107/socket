@@ -8,92 +8,110 @@
 #include <arpa/inet.h> 
 #include <netinet/in.h> 
 
-#define PORT    20319  
-#define TCP_PORT 25319 
+#define UDP_PORT    20319  
+#define CLIENT_PORT 25319 
+#define MONITOR_PORT 26319 
 #define SERVER_A_PORT    21319  
 #define SERVER_B_PORT    22319  
 #define SERVER_C_PORT    23319  
 #define MAXLINE 1024 
 
+void socket_details(struct sockaddr_in *temp, int port) {
+        temp->sin_family = AF_INET; // IPv4
+        temp->sin_addr.s_addr = INADDR_ANY;
+        temp->sin_port = htons(port);
+}
+
 int main() { 
+	struct sockaddr_in udpservaddr, cliaddr, udpservaddrA, udpservaddrB, udpservaddrC;
+	struct sockaddr_in clientservaddr, monitorservaddr; 
 	int udpsockfd;  //Udp server socket file descriptor
-	int tcpsockfd, new_socket, valread;  // Tcp server socket file descriptor
+	int clientsockfd, client_socket, valread;  // Tcp server socket file descriptor
+	int monitorsockfd, monitor_socket;  // Tcp server socket file descriptor
 	char buffer[MAXLINE]; 
 	int opt = 1;
 	int len, n; 
-	struct sockaddr_in udpservaddr, cliaddr, udpservaddrA, udpservaddrB, udpservaddrC, tcpservaddr; 
-	int tcp_addrlen = sizeof(tcpservaddr);
+	int tcp_addrlen = sizeof(clientservaddr);
+	char linkid[MAXLINE], size[MAXLINE], power[MAXLINE];
 
-	// Creating socket file descriptor 
-	if ( (udpsockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
-		perror("socket creation failed"); 
+	if ((udpsockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
+		perror("UDP socket creation failed"); 
 		exit(EXIT_FAILURE); 
 	} 
 
-	if ( (tcpsockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) { 
-		perror("socket creation failed"); 
+	if ((clientsockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) { 
+		perror("Client TCP socket creation failed"); 
 		exit(EXIT_FAILURE); 
 	} 
 
-        if (setsockopt(tcpsockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+	if ((monitorsockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) { 
+		perror("Monitor TCP socket creation failed"); 
+		exit(EXIT_FAILURE); 
+	} 
+
+        if (setsockopt(clientsockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+        	perror("setsockopt");
+        	exit(EXIT_FAILURE);
+    	}
+
+        if (setsockopt(monitorsockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
         	perror("setsockopt");
         	exit(EXIT_FAILURE);
     	}
 
 	memset(&udpservaddr, 0, sizeof(udpservaddr)); 
 	memset(&udpservaddrA, 0, sizeof(udpservaddrA)); 
+	memset(&udpservaddrB, 0, sizeof(udpservaddrB)); 
 	memset(&udpservaddrC, 0, sizeof(udpservaddrC)); 
 	memset(&cliaddr, 0, sizeof(cliaddr)); 
-
-	// Filling current server information 
-	udpservaddr.sin_family    = AF_INET; // IPv4 
-	udpservaddr.sin_addr.s_addr = INADDR_ANY; 
-	udpservaddr.sin_port = htons(PORT); 
-
-	// Filling backend server A information 
-	udpservaddrA.sin_family    = AF_INET; // IPv4 
-	udpservaddrA.sin_addr.s_addr = INADDR_ANY; 
-	udpservaddrA.sin_port = htons(SERVER_A_PORT); 
-
-	// Filling backend server A information 
-	udpservaddrB.sin_family    = AF_INET; // IPv4 
-	udpservaddrB.sin_addr.s_addr = INADDR_ANY; 
-	udpservaddrB.sin_port = htons(SERVER_B_PORT); 
-	
-	// Filling compute backend server C information 
-	udpservaddrC.sin_family    = AF_INET; // IPv4 
-	udpservaddrC.sin_addr.s_addr = INADDR_ANY; 
-	udpservaddrC.sin_port = htons(SERVER_C_PORT); 
-
-	// Filling tcp server  information 
-	tcpservaddr.sin_family    = AF_INET; // IPv4 
-	tcpservaddr.sin_addr.s_addr = INADDR_ANY; 
-	tcpservaddr.sin_port = htons(TCP_PORT);
  
-	// Bind the socket with the server address 
-	if ( bind(udpsockfd, (const struct sockaddr *)&udpservaddr, sizeof(udpservaddr)) < 0 ) { 
-		perror("bind failed"); 
+	socket_details(&udpservaddr, UDP_PORT);
+	socket_details(&udpservaddrA, SERVER_A_PORT);
+	socket_details(&udpservaddrB, SERVER_B_PORT);
+	socket_details(&udpservaddrC, SERVER_C_PORT);
+	socket_details(&clientservaddr, CLIENT_PORT);
+	socket_details(&monitorservaddr, MONITOR_PORT);
+
+	if (bind(udpsockfd, (const struct sockaddr *)&udpservaddr, sizeof(udpservaddr)) < 0 ) { 
+		perror("UDP socket bind failed"); 
 		exit(EXIT_FAILURE); 
 	} 
 	
- 	// Forcefully attaching socket to the port 8080
-    	if (bind(tcpsockfd, (struct sockaddr *)&tcpservaddr, sizeof(tcpservaddr)) < 0) {
-        	perror("bind failed");
+    	if (bind(clientsockfd, (struct sockaddr *)&clientservaddr, sizeof(clientservaddr)) < 0) {
+        	perror("Client socket bind failed");
         	exit(EXIT_FAILURE);
     	}
 
-	if (listen(tcpsockfd, 3) < 0) {
-        	perror("listen");
+    	if (bind(monitorsockfd, (struct sockaddr *)&monitorservaddr, sizeof(monitorservaddr)) < 0) {
+        	perror("Monitor socket bind failed");
+        	exit(EXIT_FAILURE);
+    	}
+
+	if (listen(clientsockfd, 1) < 0) {
+        	perror("Client listen");
         	exit(EXIT_FAILURE);
     	}
 	
-	if ((new_socket = accept(tcpsockfd, (struct sockaddr *)&tcpservaddr, (socklen_t*)&tcp_addrlen)) < 0) {
-        	perror("accept");
+	if (listen(monitorsockfd, 1) < 0) {
+        	perror("Monitor listen");
         	exit(EXIT_FAILURE);
     	}
 	
-	valread = read(new_socket, buffer, 1024);
-	printf("Message received from client: %s\n", buffer);
+	if ((client_socket = accept(clientsockfd, (struct sockaddr *)&clientservaddr, (socklen_t*)&tcp_addrlen)) < 0) {
+        	perror("Client accept");
+        	exit(EXIT_FAILURE);
+    	}
+	
+	if ((monitor_socket = accept(monitorsockfd, (struct sockaddr *)&monitorservaddr, (socklen_t*)&tcp_addrlen)) < 0) {
+        	perror("Monitor accept");
+        	exit(EXIT_FAILURE);
+    	}
+	printf("The AWS is up and running \n");
+
+	valread = read(client_socket, buffer, MAXLINE);
+	sscanf(buffer, "%s %s %s", linkid, size, power);
+	printf("The AWS received link ID=%s, size=%s, and power=%s from the client using TCP over port %d\n", linkid, size, power, CLIENT_PORT);
+	
 
 	sendto(udpsockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *) &udpservaddrA, sizeof(udpservaddrA));
         printf("Client message sent to UDP backend server A: %s\n", buffer);
@@ -116,7 +134,7 @@ int main() {
 	buffer[n] = '\0'; 
 	printf("Message received from compute UPD backend server C: %s\n", buffer);
 
-	send(new_socket , buffer, strlen(buffer), 0);
+	send(client_socket , buffer, strlen(buffer), 0);
 	printf("Backend server message is sent back to client: %s\n", buffer);
 
 	close(udpsockfd);

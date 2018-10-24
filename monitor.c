@@ -32,15 +32,9 @@ int main(int argc, char const *argv[]) {
         return -1; 
     }
 
-    printf("The client is up and running\n");
-    printf("The client sent link ID=%s,size=%s, and power=%s to AWS\n",argv[1], argv[2], argv[3]);
-    snprintf(buffer, sizeof(buffer), "%s %s %s", argv[1], argv[2], argv[3]); 
-    send(sockfd, buffer, strlen(buffer), 0);
-
-
- 
-    printf("Message sent to AWS: %s\n", buffer); 
+    printf("The Monitor is up and running\n");
     valread = read(sockfd, buffer, 1024); 
+    printf("The client sent link ID=%s,size=%s, and power=%s to AWS\n",argv[1], argv[2], argv[3]);
     printf("Message received from AWS: %s\n", buffer); 
     return 0; 
 } 

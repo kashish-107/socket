@@ -1,8 +1,4 @@
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <string.h>
-
-void csv_parser(char* filename, char* linkid) {
+int csv_parser(char* filename, char* linkid, char *buffer) {
     char line[1024];
     char* tok;
     FILE* stream = fopen(filename, "r");
@@ -16,9 +12,12 @@ void csv_parser(char* filename, char* linkid) {
 	tok = strtok(line, ",");
 	if (strcmp(tok, linkid) == 0)
     		for (;tok && *tok; ) {
+			strcat (buffer, tok);
         		printf("Field 3 would be %s\n", tok);
-			 tok = strtok(NULL, ",\n");
+			tok = strtok(NULL, ",\n");
 		}
+		return 1;
     	}
+    return 0;
 }
 
