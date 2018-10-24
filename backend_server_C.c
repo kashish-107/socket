@@ -1,4 +1,3 @@
-// Server side implementation of UDP client-server model 
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <unistd.h> 
@@ -7,6 +6,7 @@
 #include <sys/socket.h> 
 #include <arpa/inet.h> 
 #include <netinet/in.h> 
+#include <math.h>
 #include "csvparser.h"
 #define PORT    23319  
 #define AWS_PORT    20319  
@@ -14,9 +14,14 @@
 
 int main() { 
 	int sockfd;  //Server socket file descriptor
-	char buffer[MAXLINE], linkid[MAXLINE]; 
+	char buffer[MAXLINE]; 
 	struct sockaddr_in servaddr, cliaddr, aws_servaddr; 
 	int n, len, ret;
+
+	char linkid[MAXLINE];
+	int filesize, band;
+	float velocity, length, noise_power, power;
+	float prop_delay, trans_delay, end_delay;
 	// Creating socket file descriptor 
 	if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
 		perror("socket creation failed"); 
@@ -45,12 +50,22 @@ int main() {
 
 	printf("The Server C is up and running using UDP on port <%d>\n", PORT);
 
-	n = recvfrom(sockfd, (char *)linkid, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
-	linkid[n] = '\0'; 
-	printf("The Server C received input %s\n",linkid);
+	n = recvfrom(sockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
+	buffer[n] = '\0';
+	
+	sscanf(buffer, "%s %d %f %*s %d %f %f %f", linkid, &filesize, &power, &band, &length, &velocity, &noise_power);
+	 
+	printf("The Server C received link information of link <%s>, file size <%d>, and signal power <%f>\n", linkid, filesize, power);
 
-	printf("server C finished the calculation for link\n)";
+	prop_delay = length/velocity;
 
+	power = (pow(10, (power/10)))/1000;
+	noise_power = (pow(10, (noise_power/10)))/1000;
+
+	trans_delay = filesize/(band*(log2(1 + (power/noise_power))));
+	end_delay = prop_delay + trans_delay;
+
+	printf("server C finished the calculation for link %f------S = %f --------- N = %f\n", prop_delay, trans_delay, end_delay);
     	sendto(sockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *) &aws_servaddr, sizeof(aws_servaddr));
 	printf("The Server C finished sending the output to AWS"); 
 	

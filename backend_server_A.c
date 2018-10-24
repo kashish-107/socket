@@ -1,4 +1,3 @@
-// Server side implementation of UDP client-server model 
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <unistd.h> 
@@ -14,7 +13,7 @@
 
 int main() { 
 	int sockfd;  //Server socket file descriptor
-	char buffer[MAXLINE], linkid[MAXLINE]; 
+	char buffer[MAXLINE], linkid[MAXLINE], buffer1[MAXLINE]; 
 	struct sockaddr_in servaddr, cliaddr, aws_servaddr; 
 	int n, len, ret;
 	// Creating socket file descriptor 
@@ -49,9 +48,9 @@ int main() {
 	linkid[n] = '\0'; 
 	printf("The Server A received input <%s>\n",linkid);
 
-	ret = csv_parser("database_a.csv", linkid, buffer);
+	ret = csv_parser("database_a.csv", linkid, buffer1);
 	printf("The server A has found <%d> match\n", ret);
-
+	snprintf(buffer, sizeof(buffer), "%d %s", ret, buffer1);
     	sendto(sockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *) &aws_servaddr, sizeof(aws_servaddr));
 	printf("The Server A finished sending the output to AWS\n"); 
 	

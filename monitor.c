@@ -3,7 +3,7 @@
 #include <stdlib.h> 
 #include <netinet/in.h> 
 #include <string.h> 
-#define PORT 25319 
+#define PORT 26319 
    
 int main(int argc, char const *argv[]) { 
     int sockfd = 0; /* Socket descriptor */
@@ -34,7 +34,6 @@ int main(int argc, char const *argv[]) {
 
     printf("The Monitor is up and running\n");
     valread = read(sockfd, buffer, 1024); 
-    printf("The client sent link ID=%s,size=%s, and power=%s to AWS\n",argv[1], argv[2], argv[3]);
     printf("Message received from AWS: %s\n", buffer); 
     return 0; 
 } 
