@@ -33,7 +33,7 @@ int main(int argc, char const *argv[]) {
     }
 
     printf("The client is up and running\n");
-    printf("The client sent link ID=%s,size=%s, and power=%s to AWS\n",argv[1], argv[2], argv[3]);
+    printf("The client sent link ID=<%s>,size=<%s>, and power=<%s> to AWS\n",argv[1], argv[2], argv[3]);
     snprintf(buffer, sizeof(buffer), "%s %s %s", argv[1], argv[2], argv[3]); 
     send(sockfd, buffer, strlen(buffer), 0);
 

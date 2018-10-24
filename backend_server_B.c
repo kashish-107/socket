@@ -8,7 +8,7 @@
 #include <arpa/inet.h> 
 #include <netinet/in.h> 
 #include "csvparser.h"
-#define PORT    21319  
+#define PORT    22319  
 #define AWS_PORT    20319  
 #define MAXLINE 1024 
 
@@ -43,19 +43,17 @@ int main() {
 		exit(EXIT_FAILURE); 
 	} 
 
-	printf("The Server A is up and running using UDP on port %d", PORT);
+	printf("The Server B is up and running using UDP on port <%d>\n", PORT);
 
-	n = recvfrom(sockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
-	buffer[n] = '\0'; 
+	n = recvfrom(sockfd, (char *)linkid, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
+	linkid[n] = '\0'; 
+	printf("The Server B received input <%s>\n",linkid);
 
-	sscanf(buffer, "%s", linkid);	
-	printf("The Server A received input %s\n",linkid);
-
-	ret = csv_parser("database_a.csv", linkid, buffer);
-	printf("The server A has found %d match", ret);
+	ret = csv_parser("database_b.csv", linkid, buffer);
+	printf("The server B has found <%d> match\n", ret);
 
     	sendto(sockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *) &aws_servaddr, sizeof(aws_servaddr));
-	printf("The Server A finished sending the output to AWS"); 
+	printf("The Server B finished sending the output to AWS\n"); 
 	
 	close(sockfd);
 	return 0; 

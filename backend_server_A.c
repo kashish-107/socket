@@ -18,7 +18,7 @@ int main() {
 	struct sockaddr_in servaddr, cliaddr, aws_servaddr; 
 	int n, len, ret;
 	// Creating socket file descriptor 
-	if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
+	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
 		perror("socket creation failed"); 
 		exit(EXIT_FAILURE); 
 	} 
@@ -38,24 +38,22 @@ int main() {
 	aws_servaddr.sin_port = htons(AWS_PORT); 
 
 	// Bind the socket with the server address 
-	if ( bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0 ) { 
+	if (bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0 ) { 
 		perror("bind failed"); 
 		exit(EXIT_FAILURE); 
 	} 
 
-	printf("The Server A is up and running using UDP on port %d", PORT);
+	printf("The Server A is up and running using UDP on port <%d>\n", PORT);
 
-	n = recvfrom(sockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
-	buffer[n] = '\0'; 
-
-	sscanf(buffer, "%s", linkid);	
-	printf("The Server A received input %s\n",linkid);
+	n = recvfrom(sockfd, (char *)linkid, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
+	linkid[n] = '\0'; 
+	printf("The Server A received input <%s>\n",linkid);
 
 	ret = csv_parser("database_a.csv", linkid, buffer);
-	printf("The server A has found %d match", ret);
+	printf("The server A has found <%d> match\n", ret);
 
     	sendto(sockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *) &aws_servaddr, sizeof(aws_servaddr));
-	printf("The Server A finished sending the output to AWS"); 
+	printf("The Server A finished sending the output to AWS\n"); 
 	
 	close(sockfd);
 	return 0; 

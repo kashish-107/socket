@@ -108,34 +108,49 @@ int main() {
     	}
 	printf("The AWS is up and running \n");
 
+	/* Reading values from client */
 	valread = read(client_socket, buffer, MAXLINE);
 	sscanf(buffer, "%s %s %s", linkid, size, power);
 	printf("The AWS received link ID=%s, size=%s, and power=%s from the client using TCP over port %d\n", linkid, size, power, CLIENT_PORT);
 	
-
-	sendto(udpsockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *) &udpservaddrA, sizeof(udpservaddrA));
-        printf("Client message sent to UDP backend server A: %s\n", buffer);
-
+	/* Sending details to monitor server */
+	send(monitor_socket , buffer, strlen(buffer), 0);
+	printf("The AWS sent link ID=%s, size=%s, and power=%s to the monitor using TCP over port %d\n", linkid, size, power, MONITOR_PORT);
+	
+	/* Sending link ID to backend server A */
+	sendto(udpsockfd, (const char *)linkid, strlen(linkid), MSG_CONFIRM, (const struct sockaddr *) &udpservaddrA, sizeof(udpservaddrA));
+        printf("The AWS sent link ID=%s to Backend-Server A using UDP over port < %d > \n", linkid, SERVER_A_PORT);
+	
+	/* Receving message from backend server A */
 	n = recvfrom(udpsockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
 	buffer[n] = '\0'; 
 	printf("Message received from UPD backend server A: %s\n", buffer);
-
-	sendto(udpsockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *) &udpservaddrB, sizeof(udpservaddrA));
-        printf("Client message sent to UDP backend server B: %s\n", buffer);
-
+	
+	/* Sending link ID to backend server B */
+	sendto(udpsockfd, (const char *)linkid, strlen(linkid), MSG_CONFIRM, (const struct sockaddr *) &udpservaddrB, sizeof(udpservaddrB));
+        printf("The AWS sent link ID=%s to Backend-Server B using UDP over port < %d > \n", linkid, SERVER_B_PORT);
+	
+	/* Receving message from backend server B */
 	n = recvfrom(udpsockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
 	buffer[n] = '\0'; 
 	printf("Message received from UPD backend server B: %s\n", buffer);
 
+	/* Sending link details to backend server C */
 	sendto(udpsockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *) &udpservaddrC, sizeof(udpservaddrC));
-        printf("AWS message sent to compute UDP backend server C: %s\n", buffer);
-
+	printf("The AWS sent link ID=%s, size=%s, and power=%s and link information to Backend-Server C using UDP over port %d\n", linkid, size, power, SERVER_C_PORT);
+	
+	/* Receving message from backend server C */
 	n = recvfrom(udpsockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
 	buffer[n] = '\0'; 
 	printf("Message received from compute UPD backend server C: %s\n", buffer);
-
+	
+	/* Sending delay to client */
 	send(client_socket , buffer, strlen(buffer), 0);
-	printf("Backend server message is sent back to client: %s\n", buffer);
+	printf("The AWS sent delay=<10>ms to the client using TCP over port %d\n", CLIENT_PORT);
+
+	/* Sending details to monitor server */
+	send(monitor_socket , buffer, strlen(buffer), 0);
+        printf("The AWS sent detailed results to the monitor using TCP over port %d\n", MONITOR_PORT); 
 
 	close(udpsockfd);
 	return 0; 
