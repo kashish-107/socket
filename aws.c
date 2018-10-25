@@ -1,4 +1,3 @@
-// Server side implementation of UDP client-server model 
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <unistd.h> 
@@ -29,10 +28,12 @@ int main() {
 	int clientsockfd, client_socket, valread;  // Tcp server socket file descriptor
 	int monitorsockfd, monitor_socket;  // Tcp server socket file descriptor
 	char buffer[MAXLINE], bufferA[MAXLINE], bufferB[MAXLINE]; 
+	char end_delay[MAXLINE]; 
 	int opt = 1;
 	int len, n, m; 
 	int tcp_addrlen = sizeof(clientservaddr);
 	char linkid[MAXLINE], size[MAXLINE], power[MAXLINE];
+	char *nomatch = "No match";
 
 	if ((udpsockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
 		perror("UDP socket creation failed"); 
@@ -132,9 +133,6 @@ int main() {
 	/* Receving message from backend server B */
 	m = recvfrom(udpsockfd, (char *)bufferB, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
 	bufferB[m] = '\0';
- 
-	printf("Message received from UPD backend server B: %s\n", bufferB);
-	printf("Message received from UPD backend server A: %s\n", bufferA);
 
 	sscanf(bufferA, "%d", &n);
 	sscanf(bufferB, "%d", &m);
@@ -148,24 +146,30 @@ int main() {
 			strcat(buffer, bufferA);
 		}
 		else {
-                        strcat(buffer, bufferB);
+			strcat(buffer, bufferB);
 		}
 		/* Sending link details to backend server C */
 		sendto(udpsockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *) &udpservaddrC, sizeof(udpservaddrC));
 		printf("The AWS sent link ID=%s, size=%s, and power=%s and link information to Backend-Server C using UDP over port %d\n", linkid, size, power, SERVER_C_PORT);
-
 		/* Receving message from backend server C */
 		n = recvfrom(udpsockfd, (char *)buffer, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &len); 
 		buffer[n] = '\0'; 
-		printf("Message received from compute UPD backend server C: %s\n", buffer);
+		printf("The AWS received outputs from Backend-Server C using UDP over port < %d >\n", SERVER_C_PORT);
+
+		sscanf(buffer, "%*s %*s %s", end_delay);	
 
 		/* Sending delay to client */
-		send(client_socket , buffer, strlen(buffer), 0);
-		printf("The AWS sent delay=<10>ms to the client using TCP over port %d\n", CLIENT_PORT);
+		send(client_socket, end_delay, strlen(end_delay), 0);
+		printf("The AWS sent delay=<%s>ms to the client using TCP over port < %d >\n", end_delay, CLIENT_PORT);
 
 		/* Sending details to monitor server */
 		send(monitor_socket , buffer, strlen(buffer), 0);
-		printf("The AWS sent detailed results to the monitor using TCP over port %d\n", MONITOR_PORT); 
+		printf("The AWS sent detailed results to the monitor using TCP over port < %d >\n", MONITOR_PORT); 
+	}
+	else {
+		send(client_socket, nomatch, strlen(nomatch), 0);		
+		send(monitor_socket, nomatch, strlen(nomatch), 0);
+		printf("The AWS sent No Match to the monitor and the client using TCP over ports <%d> and <%d>, respectively\n", CLIENT_PORT, MONITOR_PORT);
 	}
 	close(udpsockfd);
 	return 0; 

@@ -1,6 +1,7 @@
-all : aws
+all : aws  
 
-aws : aws.c
-      gcc -o aws aws.c
+aws : 
+	gcc aws.c -o aws
+
 
 

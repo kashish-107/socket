@@ -22,6 +22,7 @@ int main() {
 	int filesize, band;
 	float velocity, length, noise_power, power;
 	float prop_delay, trans_delay, end_delay;
+
 	// Creating socket file descriptor 
 	if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
 		perror("socket creation failed"); 
@@ -57,15 +58,18 @@ int main() {
 	 
 	printf("The Server C received link information of link <%s>, file size <%d>, and signal power <%f>\n", linkid, filesize, power);
 
-	prop_delay = length/velocity;
+	prop_delay = (length/velocity) * 1000;
 
 	power = (pow(10, (power/10)))/1000;
 	noise_power = (pow(10, (noise_power/10)))/1000;
 
-	trans_delay = filesize/(band*(log2(1 + (power/noise_power))));
+	trans_delay = (filesize/(band*(log2(1 + (power/noise_power))))) * 1000;
 	end_delay = prop_delay + trans_delay;
 
-	printf("server C finished the calculation for link %f------S = %f --------- N = %f\n", prop_delay, trans_delay, end_delay);
+	printf("server C finished the calculation for link\n");
+	
+	snprintf(buffer, sizeof(buffer), "%f %f %f", prop_delay, trans_delay, end_delay);
+	
     	sendto(sockfd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *) &aws_servaddr, sizeof(aws_servaddr));
 	printf("The Server C finished sending the output to AWS"); 
 	
