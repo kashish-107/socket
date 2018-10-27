@@ -18,7 +18,6 @@ int main(int argc, char const *argv[]) {
 	} 
 
 	memset(&serv_addr, '0', sizeof(serv_addr)); 
-
 	serv_addr.sin_family = AF_INET; //IP4
 	serv_addr.sin_port = htons(PORT); 
 
@@ -36,13 +35,15 @@ int main(int argc, char const *argv[]) {
 	printf("The client is up and running\n");
 	printf("The client sent link ID=<%s>,size=<%s>, and power=<%s> to AWS\n",argv[1], argv[2], argv[3]);
 	snprintf(buffer, sizeof(buffer), "%s %s %s", argv[1], argv[2], argv[3]); 
-	send(sockfd, buffer, strlen(buffer), 0);
+	valread = send(sockfd, buffer, strlen(buffer), 0); /* Sending client input to AWS */
 
-	valread = read(sockfd, nomatch, 1024);
-	
-	if (strcmp(nomatch,"No match") == 0)
-		printf("Found no matches for link <%s>", argv[1]);
+	valread = read(sockfd, nomatch, 1024); /* Reading message from AWS */
+
+	if (strcmp(nomatch,"No match") == 0) /* Checking whether results found or not */
+		printf("Found no matches for link <%s>\n", argv[1]);
 	else
-		printf("The delay for link <%s> is <%s>ms\n", argv[1], buffer); 
+		printf("The delay for link <%s> is <%s>ms\n", argv[1], nomatch);
+
+	close(sockfd); /* Closing socket */
 	return 0; 
 } 

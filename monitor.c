@@ -11,7 +11,7 @@ int main(int argc, char const *argv[]) {
 	int valread; 
 	struct sockaddr_in serv_addr; 
 	char buffer[1024] = {0};
-	char nomatch[1024] = "No match";
+	char nomatch[1024];
 	char linkid[MAXLINE], size[MAXLINE], power[MAXLINE];
 	char prop_delay[MAXLINE], trans_delay[MAXLINE], end_delay[MAXLINE];
 
@@ -37,16 +37,18 @@ int main(int argc, char const *argv[]) {
 	}
 
 	printf("The Monitor is up and running\n");
-	valread = read(sockfd, buffer, 1024);
-	sscanf(buffer, "%s %s %s", linkid, size, power);
-	printf("The monitor received input=<%s>, size=<%s>, and power=<%s> from the AWS\n", linkid, size, power);
-	valread = read(sockfd, buffer, 1024);
-	if (strcmp(nomatch,"No match") == 0)
-		printf("Found no matches for link <%s>", linkid);
-	else {
-		sscanf(buffer, "%s %s %s", prop_delay, trans_delay, end_delay);
-		printf("The result for link <%s>:\nTt = <%s>ms\nTt = <%s>ms\nDelay = <%s>ms\n", linkid, trans_delay, prop_delay, end_delay);
+	while(1) {
+		valread = read(sockfd, buffer, 1024);
+		sscanf(buffer, "%s %s %s", linkid, size, power);
+		printf("The monitor received input=<%s>, size=<%s>, and power=<%s> from the AWS\n", linkid, size, power);
+		valread = read(sockfd, nomatch, 1024);
+		if (strcmp(nomatch,"No match") == 0)
+			printf("Found no matches for link <%s>\n", linkid);
+		else {
+			sscanf(nomatch, "%s %s %s", prop_delay, trans_delay, end_delay);
+			printf("The result for link <%s>:\nTt = <%s>ms\nTt = <%s>ms\nDelay = <%s>ms\n", linkid, trans_delay, prop_delay, end_delay);
+		}
 	}
-
+	close(sockfd);
 	return 0; 
 } 
